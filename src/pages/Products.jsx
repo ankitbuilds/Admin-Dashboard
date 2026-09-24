@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
     getProducts,
@@ -29,6 +30,7 @@ function Products() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     const pageParam = Number(
         searchParams.get("page")
@@ -344,6 +346,11 @@ if (sort === "title") {
                     Manage your products from here.
                 </p>
             </div>
+            <button
+               onClick={() => navigate("/products/add")}
+            >
+               Add Product
+            </button>
 
             <ProductFilters
                 search={searchInput}
