@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { getProductById } from "../api/productApi";
+import {
+    getProductById,
+    deleteProduct,
+} from "../api/productApi";
 
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
@@ -12,6 +15,7 @@ function ProductDetails() {
 
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -39,16 +43,46 @@ function ProductDetails() {
         fetchProduct();
     }, [id]);
 
+    const handleDelete = async () => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${product.title}"?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setDeleting(true);
+            setError("");
+
+            await deleteProduct(product.id);
+
+            navigate("/products");
+        } catch (error) {
+            console.error(error);
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to delete product."
+            );
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     if (loading) {
         return <Loader />;
     }
 
-    if (error) {
+    if (error && !product) {
         return (
             <div>
                 <ErrorMessage message={error} />
 
-                <button onClick={() => navigate("/products")}>
+                <button
+                    onClick={() => navigate("/products")}
+                >
                     Back to Products
                 </button>
             </div>
@@ -62,24 +96,59 @@ function ProductDetails() {
     return (
         <div className="product-details">
 
-            <button onClick={() => navigate("/products")}>
-                ← Back to Products
-            </button>
+            <div className="product-actions">
+
+                <button
+                    onClick={() => navigate("/products")}
+                    disabled={deleting}
+                >
+                    ← Back to Products
+                </button>
+
+                <button
+                    onClick={() =>
+                        navigate(
+                            `/products/edit/${product.id}`
+                        )
+                    }
+                    disabled={deleting}
+                >
+                    Edit Product
+                </button>
+
+                <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                >
+                    {deleting
+                        ? "Deleting..."
+                        : "Delete Product"}
+                </button>
+
+            </div>
+
+            {error && (
+                <ErrorMessage message={error} />
+            )}
 
             <div className="product-details-container">
 
-                {/* Images */}
                 <div className="product-images">
-                    {product.images?.map((image, index) => (
-                        <img
-                            key={index}
-                            src={image}
-                            alt={`${product.title} ${index + 1}`}
-                        />
-                    ))}
+
+                    {product.images?.map(
+                        (image, index) => (
+                            <img
+                                key={index}
+                                src={image}
+                                alt={`${product.title} ${
+                                    index + 1
+                                }`}
+                            />
+                        )
+                    )}
+
                 </div>
 
-                {/* Product Information */}
                 <div className="product-info">
 
                     <h1>{product.title}</h1>
@@ -113,39 +182,43 @@ function ProductDetails() {
                         <strong>Description:</strong>
                     </p>
 
-                    <p>{product.description}</p>
+                    <p>
+                        {product.description}
+                    </p>
 
                 </div>
+
             </div>
 
-            {/* Reviews */}
             <div className="reviews">
 
                 <h2>Reviews</h2>
 
                 {product.reviews?.length > 0 ? (
-                    product.reviews.map((review, index) => (
-                        <div
-                            className="review"
-                            key={index}
-                        >
-                            <h4>
-                                {review.reviewerName}
-                            </h4>
+                    product.reviews.map(
+                        (review, index) => (
+                            <div
+                                className="review"
+                                key={index}
+                            >
+                                <h4>
+                                    {review.reviewerName}
+                                </h4>
 
-                            <p>
-                                ⭐ {review.rating}
-                            </p>
+                                <p>
+                                    ⭐ {review.rating}
+                                </p>
 
-                            <p>
-                                {review.comment}
-                            </p>
+                                <p>
+                                    {review.comment}
+                                </p>
 
-                            <small>
-                                {review.date}
-                            </small>
-                        </div>
-                    ))
+                                <small>
+                                    {review.date}
+                                </small>
+                            </div>
+                        )
+                    )
                 ) : (
                     <p>No reviews available.</p>
                 )}
