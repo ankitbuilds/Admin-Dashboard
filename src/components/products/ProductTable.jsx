@@ -1,7 +1,9 @@
-function ProductTable({products}){
-    return(
+import { Link } from "react-router-dom";
+
+function ProductTable({ products }) {
+    return (
         <div className="table-container">
-            <table>
+            <table className="product-table">
                 <thead>
                     <tr>
                         <th>Image</th>
@@ -14,25 +16,40 @@ function ProductTable({products}){
                 </thead>
 
                 <tbody>
-                    {products.map((product)=>(
+                    {products.map((product) => (
                         <tr key={product.id}>
                             <td>
                                 <img
-                                src={product.thumbnail}
-                                alt={product.title}
-                                width="60"/>
+                                    src={product.thumbnail}
+                                    alt={product.title}
+                                    width="60"
+                                    height="60"
+                                />
                             </td>
-                            <td>{product.title}</td>
+
+                            <td>
+                                <Link
+                                    to={`/products/${product.id}`}
+                                >
+                                    {product.title}
+                                </Link>
+                            </td>
+
                             <td>{product.category}</td>
-                            <td>{product.price}</td>
-                            <td>{product.rating}</td>
+
+                            <td>${product.price}</td>
+
+                            <td>
+                                ⭐ {product.rating}
+                            </td>
+
                             <td>{product.stock}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
-    )
+    );
 }
 
 export default ProductTable;
