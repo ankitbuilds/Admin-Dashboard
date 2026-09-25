@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { updateLocalProduct } from "../utils/productStorage";
 import {
     getProductById,
     updateProduct,
@@ -113,6 +113,7 @@ function EditProduct() {
                 price: Number(formData.price),
                 stock: Number(formData.stock),
             });
+            updateLocalProduct(updatedProduct);
 
             console.log(
                 "Updated product:",

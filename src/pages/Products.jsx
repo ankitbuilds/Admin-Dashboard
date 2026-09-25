@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
     getProducts,
@@ -9,28 +8,62 @@ import {
     getProductsByCategory,
 } from "../api/productApi";
 
-import { useDebounce } from "../hooks/useDebounce";
+import ProductTable from "../components/products/ProductTable";
+import ProductCard from "../components/products/ProductCard";
+import ProductFilters from "../components/products/ProductFilters";
+import Pagination from "../components/products/Pagination";
 
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 import EmptyState from "../components/common/EmptyState";
 
-import ProductTable from "../components/products/ProductTable";
-import ProductCard from "../components/products/ProductCard";
-import Pagination from "../components/products/Pagination";
-import ProductFilters from "../components/products/ProductFilters";
+import { useDebounce } from "../hooks/useDebounce";
+import { getLocalMutations } from "../utils/productStorage";
+
+
+/*
+    Apply locally created, updated and deleted products
+    to the products received from DummyJSON.
+*/
+const applyLocalMutations = (products) => {
+    const mutations = getLocalMutations();
+
+    let result = [...products];
+
+    // Remove deleted products
+    result = result.filter(
+        (product) =>
+            !mutations.deleted.includes(product.id)
+    );
+
+    // Apply updated products
+    result = result.map((product) => {
+        return (
+            mutations.updated[product.id] ||
+            product
+        );
+    });
+
+    // Add locally created products
+    result = [
+        ...mutations.added,
+        ...result,
+    ];
+
+    return result;
+};
+
 
 function Products() {
+    const navigate = useNavigate();
+
     const [searchParams, setSearchParams] =
         useSearchParams();
 
-    const [products, setProducts] = useState([]);
-    const [total, setTotal] = useState(0);
-    const [categories, setCategories] = useState([]);
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
+    // --------------------------------
+    // URL PARAMETERS
+    // --------------------------------
 
     const pageParam = Number(
         searchParams.get("page")
@@ -41,7 +74,8 @@ function Products() {
     );
 
     const currentPage =
-        Number.isInteger(pageParam) && pageParam > 0
+        Number.isInteger(pageParam) &&
+        pageParam > 0
             ? pageParam
             : 1;
 
@@ -60,19 +94,55 @@ function Products() {
         searchParams.get("sort") || "";
 
     const order =
-        searchParams.get("order") || "";
+        searchParams.get("order") || "asc";
 
-    const [searchInput, setSearchInput] =
-        useState(search);
-
-    const debouncedSearch =
-        useDebounce(searchInput, 500);
 
     const skip =
         (currentPage - 1) * pageSize;
 
+
+    // --------------------------------
+    // STATE
+    // --------------------------------
+
+    const [products, setProducts] =
+        useState([]);
+
+    const [total, setTotal] =
+        useState(0);
+
+    const [categories, setCategories] =
+        useState([]);
+
+    const [searchInput, setSearchInput] =
+        useState(search);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
+
+
+    // --------------------------------
+    // DEBOUNCE SEARCH
+    // --------------------------------
+
+    const debouncedSearch =
+        useDebounce(searchInput, 500);
+
+
+    // --------------------------------
+    // TOTAL PAGES
+    // --------------------------------
+
     const totalPages =
         Math.ceil(total / pageSize);
+
+
+    // --------------------------------
+    // FETCH CATEGORIES
+    // --------------------------------
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -83,7 +153,7 @@ function Products() {
                 setCategories(data);
             } catch (error) {
                 console.error(
-                    "Category error:",
+                    "Failed to fetch categories:",
                     error
                 );
             }
@@ -92,44 +162,69 @@ function Products() {
         fetchCategories();
     }, []);
 
-    useEffect(() => {
-        setSearchInput(search);
-    }, [search]);
+
+    // --------------------------------
+    // SEARCH INPUT → URL
+    // --------------------------------
 
     useEffect(() => {
-        if (debouncedSearch === search) {
+        const trimmedSearch =
+            debouncedSearch.trim();
+
+        const currentSearch =
+            searchParams.get("search") || "";
+
+        if (trimmedSearch === currentSearch) {
             return;
         }
 
-        const params = {
-            page: "1",
-            limit: String(pageSize),
-        };
+        const params =
+            new URLSearchParams(searchParams);
 
-        if (debouncedSearch.trim()) {
-            params.search =
-                debouncedSearch.trim();
+        if (trimmedSearch) {
+            params.set(
+                "search",
+                trimmedSearch
+            );
+
+            /*
+                Search takes precedence over
+                category because DummyJSON
+                doesn't support combining them.
+            */
+            params.delete("category");
+        } else {
+            params.delete("search");
         }
 
-        if (category) {
-            params.category = category;
-        }
-
-        if (sort) {
-            params.sort = sort;
-            params.order = order;
-        }
+        // Search should start from page 1
+        params.set("page", "1");
+        params.set(
+            "limit",
+            String(pageSize)
+        );
 
         setSearchParams(params);
     }, [
         debouncedSearch,
-        search,
-        pageSize,
-        category,
-        sort,
-        order,
+        searchParams,
         setSearchParams,
+        pageSize,
     ]);
+
+
+    // --------------------------------
+    // KEEP INPUT IN SYNC WITH URL
+    // --------------------------------
+
+    useEffect(() => {
+        setSearchInput(search);
+    }, [search]);
+
+
+    // --------------------------------
+    // FETCH PRODUCTS
+    // --------------------------------
 
     useEffect(() => {
         const controller =
@@ -142,55 +237,195 @@ function Products() {
 
                 let data;
 
-                if (search.trim()) {
-                    data = await searchProducts({
-                        query: search,
-                        limit: pageSize,
-                        skip,
-                        signal: controller.signal,
-                    });
-                } else if (category) {
+
+                // ------------------------
+                // SEARCH
+                // ------------------------
+
+                if (search) {
+                    data =
+                        await searchProducts({
+                            query: search,
+                            limit: pageSize,
+                            skip,
+                            signal:
+                                controller.signal,
+                        });
+                }
+
+
+                // ------------------------
+                // CATEGORY
+                // ------------------------
+
+                else if (category) {
                     data =
                         await getProductsByCategory({
                             category,
                             limit: pageSize,
                             skip,
                         });
-                } else {
-                    data = await getProducts({
-                        limit: pageSize,
-                        skip,
-                    });
                 }
 
-                setProducts(data.products);
-                setTotal(data.total);
+
+                // ------------------------
+                // NORMAL PRODUCTS
+                // ------------------------
+
+                else {
+                    data =
+                        await getProducts({
+                            limit: pageSize,
+                            skip,
+                        });
+                }
+
+
+                // ------------------------
+                // APPLY LOCAL MUTATIONS
+                // ------------------------
+
+                const updatedProducts =
+                    applyLocalMutations(
+                        data.products || []
+                    );
+
+
+                // ------------------------
+                // SORT
+                // ------------------------
+
+                const sortedProducts =
+                    [...updatedProducts].sort(
+                        (a, b) => {
+
+                            if (!sort) {
+                                return 0;
+                            }
+
+                            let valueA;
+                            let valueB;
+
+                            if (
+                                sort === "price"
+                            ) {
+                                valueA =
+                                    Number(
+                                        a.price
+                                    );
+
+                                valueB =
+                                    Number(
+                                        b.price
+                                    );
+                            }
+
+                            else if (
+                                sort === "rating"
+                            ) {
+                                valueA =
+                                    Number(
+                                        a.rating
+                                    );
+
+                                valueB =
+                                    Number(
+                                        b.rating
+                                    );
+                            }
+
+                            else if (
+                                sort === "title"
+                            ) {
+                                valueA =
+                                    a.title
+                                        .toLowerCase();
+
+                                valueB =
+                                    b.title
+                                        .toLowerCase();
+                            }
+
+                            else {
+                                return 0;
+                            }
+
+
+                            if (
+                                valueA <
+                                valueB
+                            ) {
+                                return order ===
+                                    "asc"
+                                    ? -1
+                                    : 1;
+                            }
+
+                            if (
+                                valueA >
+                                valueB
+                            ) {
+                                return order ===
+                                    "asc"
+                                    ? 1
+                                    : -1;
+                            }
+
+                            return 0;
+                        }
+                    );
+
+
+                setProducts(
+                    sortedProducts
+                );
+
+                setTotal(
+                    data.total || 0
+                );
 
             } catch (error) {
+
+                /*
+                    AbortController intentionally
+                    cancels previous requests when
+                    search/page/filter changes.
+                */
                 if (
-                    error.name === "CanceledError" ||
-                    error.code === "ERR_CANCELED"
+                    error.name ===
+                    "CanceledError"
                 ) {
                     return;
                 }
 
-                console.error(
-                    "Products error:",
-                    error
-                );
+                if (
+                    error.code ===
+                    "ERR_CANCELED"
+                ) {
+                    return;
+                }
+
+                console.error(error);
 
                 setError(
-                    "Unable to load products. Please try again."
+                    "Failed to load products."
                 );
+
             } finally {
-                if (!controller.signal.aborted) {
+
+                if (
+                    !controller.signal.aborted
+                ) {
                     setLoading(false);
                 }
             }
         };
 
+
         fetchProducts();
 
+
+        // Cancel previous request
         return () => {
             controller.abort();
         };
@@ -200,167 +435,252 @@ function Products() {
         category,
         currentPage,
         pageSize,
+        sort,
+        order,
     ]);
 
-    const handleSearchChange = (value) => {
-        setSearchInput(value);
-    };
 
-    const handleCategoryChange = (value) => {
-        setSearchParams({
-            page: "1",
-            limit: String(pageSize),
-            ...(value && {
-                category: value,
-            }),
-            ...(sort && {
-                sort,
-                order,
-            }),
-        });
-    };
+    // --------------------------------
+    // INVALID PAGE HANDLING
+    // --------------------------------
 
-    const handleSortChange = (value) => {
-        if (value === "-") {
-            setSearchParams({
-                page: "1",
-                limit: String(pageSize),
-                ...(search && { search }),
-                ...(category && { category }),
-            });
+    useEffect(() => {
+        if (
+            total > 0 &&
+            currentPage > totalPages
+        ) {
+            const params =
+                new URLSearchParams(
+                    searchParams
+                );
 
-            return;
+            params.set(
+                "page",
+                String(totalPages)
+            );
+
+            params.set(
+                "limit",
+                String(pageSize)
+            );
+
+            setSearchParams(params);
         }
+    }, [
+        total,
+        totalPages,
+        currentPage,
+        pageSize,
+        searchParams,
+        setSearchParams,
+    ]);
 
-        const [newSort, newOrder] =
-            value.split("-");
 
-        setSearchParams({
-            page: "1",
-            limit: String(pageSize),
-            ...(search && { search }),
-            ...(category && { category }),
-            sort: newSort,
-            order: newOrder,
-        });
-    };
+    // --------------------------------
+    // PAGE CHANGE
+    // --------------------------------
 
     const handlePageChange = (page) => {
-        setSearchParams({
-            page: String(page),
-            limit: String(pageSize),
+        const params =
+            new URLSearchParams(
+                searchParams
+            );
 
-            ...(search && { search }),
+        params.set(
+            "page",
+            String(page)
+        );
 
-            ...(category && {
-                category,
-            }),
+        params.set(
+            "limit",
+            String(pageSize)
+        );
 
-            ...(sort && {
-                sort,
-                order,
-            }),
-        });
+        setSearchParams(params);
     };
 
-    const handlePageSizeChange = (newSize) => {
-        setSearchParams({
-            page: "1",
-            limit: String(newSize),
 
-            ...(search && { search }),
+    // --------------------------------
+    // PAGE SIZE CHANGE
+    // --------------------------------
 
-            ...(category && {
-                category,
-            }),
+    const handlePageSizeChange = (
+        newPageSize
+    ) => {
+        const params =
+            new URLSearchParams(
+                searchParams
+            );
 
-            ...(sort && {
-                sort,
-                order,
-            }),
-        });
+        params.set(
+            "page",
+            "1"
+        );
+
+        params.set(
+            "limit",
+            String(newPageSize)
+        );
+
+        setSearchParams(params);
     };
 
-    if (loading) {
-        return <Loader />;
-    }
 
-    if (error) {
-        return (
-            <ErrorMessage
-                message={error}
-                onRetry={() => window.location.reload()}
-            />
-        );
-    }
+    // --------------------------------
+    // CATEGORY CHANGE
+    // --------------------------------
 
-    if (products.length === 0) {
-        return (
-            <EmptyState
-                message="No products found."
-            />
+    const handleCategoryChange = (
+        newCategory
+    ) => {
+        const params =
+            new URLSearchParams(
+                searchParams
+            );
+
+        params.set(
+            "page",
+            "1"
         );
-    }
+
+        if (newCategory) {
+            params.set(
+                "category",
+                newCategory
+            );
+
+            /*
+                Category takes precedence
+                when user selects a category.
+            */
+            params.delete("search");
+            setSearchInput("");
+        } else {
+            params.delete("category");
+        }
+
+        setSearchParams(params);
+    };
+
+
+    // --------------------------------
+    // SORT CHANGE
+    // --------------------------------
+
+    const handleSortChange = (
+        sortValue,
+        orderValue
+    ) => {
+        const params =
+            new URLSearchParams(
+                searchParams
+            );
+
+        params.set(
+            "page",
+            "1"
+        );
+
+        if (sortValue) {
+            params.set(
+                "sort",
+                sortValue
+            );
+
+            params.set(
+                "order",
+                orderValue
+            );
+        } else {
+            params.delete("sort");
+            params.delete("order");
+        }
+
+        setSearchParams(params);
+    };
+
+
+    // --------------------------------
+    // RETRY
+    // --------------------------------
+
+    const handleRetry = () => {
+        setError("");
+
+        /*
+            Changing the URL causes the
+            fetch effect to execute again.
+        */
+        const params =
+            new URLSearchParams(
+                searchParams
+            );
+
+        params.set(
+            "page",
+            String(currentPage)
+        );
+
+        setSearchParams(params);
+    };
+
+
+    // --------------------------------
+    // SHOWING TEXT
+    // --------------------------------
 
     const start =
-        (currentPage - 1) * pageSize + 1;
+        total === 0
+            ? 0
+            : skip + 1;
 
-    const end = Math.min(
-        currentPage * pageSize,
-        total
-    );
+    const end =
+        Math.min(
+            skip + pageSize,
+            total
+        );
 
-    const sortedProducts = [...products];
 
-if (sort === "price") {
-    sortedProducts.sort((a, b) =>
-        order === "asc"
-            ? a.price - b.price
-            : b.price - a.price
-    );
-}
-
-if (sort === "rating") {
-    sortedProducts.sort((a, b) =>
-        order === "asc"
-            ? a.rating - b.rating
-            : b.rating - a.rating
-    );
-}
-
-if (sort === "title") {
-    sortedProducts.sort((a, b) =>
-        order === "asc"
-            ? a.title.localeCompare(b.title)
-            : b.title.localeCompare(a.title)
-    );
-}
+    // --------------------------------
+    // UI
+    // --------------------------------
 
     return (
         <div className="products-page">
 
             <div className="products-header">
-                <h1>Products</h1>
 
-                <p>
-                    Manage your products from here.
-                </p>
+                <div>
+                    <h1>Products</h1>
+
+                    <p>
+                        Showing {start}–{end} of{" "}
+                        {total}
+                    </p>
+                </div>
+
+                <button
+                    onClick={() =>
+                        navigate(
+                            "/products/add"
+                        )
+                    }
+                >
+                    Add Product
+                </button>
+
             </div>
-            <button
-               onClick={() => navigate("/products/add")}
-            >
-               Add Product
-            </button>
+
+
+            {/* Filters */}
 
             <ProductFilters
                 search={searchInput}
+                setSearch={setSearchInput}
                 category={category}
+                categories={categories}
                 sort={sort}
                 order={order}
-                categories={categories}
-                onSearchChange={
-                    handleSearchChange
-                }
                 onCategoryChange={
                     handleCategoryChange
                 }
@@ -369,38 +689,91 @@ if (sort === "title") {
                 }
             />
 
+
+            {/* Search + Category warning */}
+
             {search && category && (
                 <p>
                     Search and category filters
-                    cannot be combined. Search results
-                    are being displayed.
+                    cannot be combined. Search is
+                    being used.
                 </p>
             )}
 
-            <ProductTable products={sortedProducts} />
 
-            <div className="product-cards">
-                {sortedProducts.map((product) => (
-                    <ProductCard
-                        key={product.id}
-                        product={product}
+            {/* Error */}
+
+            {error && (
+                <div>
+                    <ErrorMessage
+                        message={error}
                     />
-                ))}
-            </div>
 
-            <div className="pagination-info">
-                Showing {start}–{end} of {total}
-            </div>
+                    <button
+                        onClick={handleRetry}
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
 
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={handlePageChange}
-                onPageSizeChange={
-                    handlePageSizeChange
-                }
-            />
+
+            {/* Loading */}
+
+            {loading && <Loader />}
+
+
+            {/* Empty */}
+
+            {!loading &&
+                !error &&
+                products.length === 0 && (
+                    <EmptyState
+                        message="No products found."
+                    />
+                )}
+
+
+            {/* Products */}
+
+            {!loading &&
+                !error &&
+                products.length > 0 && (
+                    <>
+                        <ProductTable
+                            products={products}
+                        />
+
+                        <ProductCard
+                            products={products}
+                        />
+                    </>
+                )}
+
+
+            {/* Pagination */}
+
+            {!loading &&
+                !error &&
+                total > 0 && (
+                    <Pagination
+                        currentPage={
+                            currentPage
+                        }
+                        totalPages={
+                            totalPages
+                        }
+                        pageSize={
+                            pageSize
+                        }
+                        onPageChange={
+                            handlePageChange
+                        }
+                        onPageSizeChange={
+                            handlePageSizeChange
+                        }
+                    />
+                )}
 
         </div>
     );

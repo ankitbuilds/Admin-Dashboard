@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { deleteLocalProduct } from "../utils/productStorage";
 import {
     getProductById,
     deleteProduct,
@@ -57,6 +57,7 @@ function ProductDetails() {
             setError("");
 
             await deleteProduct(product.id);
+            deleteLocalProduct(product.id);
 
             navigate("/products");
         } catch (error) {

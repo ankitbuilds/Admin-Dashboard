@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { addProduct } from "../api/productApi";
+import { addLocalProduct } from "../utils/productStorage";
 
 function AddProduct() {
     const navigate = useNavigate();
@@ -72,6 +73,7 @@ function AddProduct() {
                 price: Number(formData.price),
                 stock: Number(formData.stock),
             });
+            addLocalProduct(product);
 
             console.log("Created product:", product);
 
