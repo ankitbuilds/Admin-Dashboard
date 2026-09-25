@@ -1,79 +1,145 @@
 function ProductFilters({
     search,
+    setSearch,
     category,
+    categories,
     sort,
     order,
-    categories,
-    onSearchChange,
     onCategoryChange,
     onSortChange,
 }) {
+    const handleSortChange = (e) => {
+        const value = e.target.value;
+
+        if (!value) {
+            onSortChange("", "asc");
+            return;
+        }
+
+        const [sortValue, sortOrder] =
+            value.split("-");
+
+        onSortChange(
+            sortValue,
+            sortOrder
+        );
+    };
+
     return (
         <div className="product-filters">
 
-            <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) =>
-                    onSearchChange(e.target.value)
-                }
-            />
+            {/* Search */}
 
-            <select
-                value={category}
-                onChange={(e) =>
-                    onCategoryChange(e.target.value)
-                }
-            >
-                <option value="">
-                    All Categories
-                </option>
+            <div className="filter-group">
+                <label>
+                    Search
+                </label>
 
-                {categories.map((item) => (
-                    <option
-                        key={item.slug}
-                        value={item.slug}
-                    >
-                        {item.name}
+                <input
+                    type="text"
+                    value={search}
+                    onChange={(e) =>
+                        setSearch(e.target.value)
+                    }
+                    placeholder="Search products..."
+                />
+            </div>
+
+
+            {/* Category */}
+
+            <div className="filter-group">
+                <label>
+                    Category
+                </label>
+
+                <select
+                    value={category}
+                    onChange={(e) =>
+                        onCategoryChange(
+                            e.target.value
+                        )
+                    }
+                >
+                    <option value="">
+                        All Categories
                     </option>
-                ))}
-            </select>
 
-            <select
-                value={`${sort}-${order}`}
-                onChange={(e) =>
-                    onSortChange(e.target.value)
-                }
-            >
-                <option value="-">
-                    Default Sort
-                </option>
+                    {categories.map(
+                        (category) => (
+                            <option
+                                key={
+                                    typeof category ===
+                                    "string"
+                                        ? category
+                                        : category.slug
+                                }
+                                value={
+                                    typeof category ===
+                                    "string"
+                                        ? category
+                                        : category.slug
+                                }
+                            >
+                                {
+                                    typeof category ===
+                                    "string"
+                                        ? category
+                                        : category.name
+                                }
+                            </option>
+                        )
+                    )}
+                </select>
+            </div>
 
-                <option value="price-asc">
-                    Price: Low to High
-                </option>
 
-                <option value="price-desc">
-                    Price: High to Low
-                </option>
+            {/* Sort */}
 
-                <option value="rating-desc">
-                    Rating: High to Low
-                </option>
+            <div className="filter-group">
+                <label>
+                    Sort
+                </label>
 
-                <option value="rating-asc">
-                    Rating: Low to High
-                </option>
+                <select
+                    value={
+                        sort
+                            ? `${sort}-${order}`
+                            : ""
+                    }
+                    onChange={
+                        handleSortChange
+                    }
+                >
+                    <option value="">
+                        Default
+                    </option>
 
-                <option value="title-asc">
-                    Title: A-Z
-                </option>
+                    <option value="price-asc">
+                        Price: Low to High
+                    </option>
 
-                <option value="title-desc">
-                    Title: Z-A
-                </option>
-            </select>
+                    <option value="price-desc">
+                        Price: High to Low
+                    </option>
+
+                    <option value="rating-asc">
+                        Rating: Low to High
+                    </option>
+
+                    <option value="rating-desc">
+                        Rating: High to Low
+                    </option>
+
+                    <option value="title-asc">
+                        Title: A to Z
+                    </option>
+
+                    <option value="title-desc">
+                        Title: Z to A
+                    </option>
+                </select>
+            </div>
 
         </div>
     );

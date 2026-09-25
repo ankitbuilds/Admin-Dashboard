@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-function ProductTable({ products }) {
+function ProductTable({ products = []}) {
     return (
         <div className="table-container">
             <table className="product-table">

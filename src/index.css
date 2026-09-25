@@ -1,3 +1,7 @@
+/* =========================
+   RESET
+========================= */
+
 * {
     margin: 0;
     padding: 0;
@@ -6,29 +10,191 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #f5f5f5;
+    background: #f5f7fb;
+    color: #222;
 }
 
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================
+   COMMON
+========================= */
+
+button {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    background: #2563eb;
+    color: white;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #2563eb;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+
+/* =========================
+   LOGIN PAGE
+========================= */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    padding: 32px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.login-container h1 {
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.login-container > p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.login-form button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.login-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+
+/* =========================
+   PRODUCTS PAGE
+========================= */
+
 .products-page {
+    max-width: 1400px;
+    margin: 0 auto;
     padding: 24px;
 }
 
 .products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 24px;
 }
 
 .products-header h1 {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
+.products-header p {
+    color: #666;
+    font-size: 14px;
+}
+
+
 /* =========================
-   DESKTOP
+   FILTERS
+========================= */
+
+.product-filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* =========================
+   DESKTOP TABLE
 ========================= */
 
 .table-container {
     display: block;
     width: 100%;
     overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .product-cards {
@@ -38,18 +204,26 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
 }
 
 th,
 td {
     padding: 14px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #eee;
     text-align: left;
 }
 
 th {
-    background: #f5f5f5;
+    background: #f9fafb;
+    font-size: 14px;
+}
+
+td {
+    font-size: 14px;
+}
+
+tbody tr:hover {
+    background: #f9fafb;
 }
 
 td img {
@@ -59,38 +233,279 @@ td img {
     border-radius: 6px;
 }
 
+
+/* =========================
+   PRODUCT CARDS
+========================= */
+
+.product-card {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.product-card h3 {
+    margin: 12px 0;
+}
+
+.product-card p {
+    margin: 7px 0;
+    color: #555;
+}
+
+
+/* =========================
+   PAGINATION
+========================= */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.page-size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-size select {
+    width: auto;
+}
+
+.page-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.page-buttons button {
+    padding: 8px 12px;
+}
+
+.page-buttons button.active {
+    background: #1d4ed8;
+}
+
+
+/* =========================
+   PRODUCT DETAILS
+========================= */
+
+.product-details {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.product-details-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    background: white;
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.product-images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.product-images img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.product-info h1 {
+    margin-bottom: 20px;
+}
+
+.product-info p {
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.reviews {
+    margin-top: 24px;
+    background: white;
+    padding: 24px;
+    border-radius: 10px;
+}
+
+.reviews h2 {
+    margin-bottom: 16px;
+}
+
+.review {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.review:last-child {
+    border-bottom: none;
+}
+
+.review h4 {
+    margin-bottom: 6px;
+}
+
+.review p {
+    margin-bottom: 6px;
+    color: #555;
+}
+
+
+/* =========================
+   ADD / EDIT PRODUCT
+========================= */
+
+.add-product-page,
+.edit-product-page {
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 24px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.add-product-page h1,
+.edit-product-page h1 {
+    margin-bottom: 24px;
+}
+
+.add-product-page form,
+.edit-product-page form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.add-product-page label,
+.edit-product-page label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.add-product-page form button,
+.edit-product-page form button {
+    width: fit-content;
+}
+
+.error-message {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.empty-state {
+    background: white;
+    padding: 40px;
+    text-align: center;
+    border-radius: 8px;
+    color: #666;
+}
+
+
 /* =========================
    MOBILE
 ========================= */
 
 @media (max-width: 768px) {
+
     .products-page {
         padding: 16px;
     }
 
-    .table-container {
+    .products-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .product-filters {
+        grid-template-columns: 1fr;
+    }
+
+    /* Hide table */
+
+    .products-page .table-container {
         display: none;
     }
 
-    .product-cards {
+    /* Show cards */
+
+    .products-page .product-cards {
         display: block;
     }
 
-    .product-card {
-        background: white;
+    /* Pagination */
+
+    .pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .page-buttons {
+        justify-content: center;
+    }
+
+    /* Details */
+
+    .product-details {
         padding: 16px;
-        border-radius: 8px;
-        margin-bottom: 16px;
     }
 
-    .product-card img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        border-radius: 8px;
+    .product-details-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
     }
 
-    .product-card h3 {
-        margin: 12px 0;
+    .product-images img {
+        height: 180px;
+    }
+
+    .product-actions {
+        flex-wrap: wrap;
+    }
+
+    /* Forms */
+
+    .add-product-page,
+    .edit-product-page {
+        margin: 16px;
+        padding: 20px;
+    }
+
+    /* Login */
+
+    .login-container {
+        padding: 24px;
     }
 }

@@ -51,7 +51,7 @@ function Login(){
 
     return (
         <div className="login-page">
-            <form onSubmit={handleSubmit}>
+            <form className="login-form" onSubmit={handleSubmit}>
                 <h1>Admin Login</h1>
 
                 <div>
@@ -77,7 +77,7 @@ function Login(){
                 </div>
 
                 {error &&(
-                    <p className="error">{error}</p>
+                    <p className="login-error">{error}</p>
                 )}
 
                 <button type="submit" disabled={loading}>

@@ -5,11 +5,22 @@ function Pagination({
     onPageChange,
     onPageSizeChange,
 }) {
+    const pages = [];
+
+    for (
+        let page = 1;
+        page <= totalPages;
+        page++
+    ) {
+        pages.push(page);
+    }
+
     return (
         <div className="pagination">
-            <div>
+
+            <div className="page-size">
                 <label>
-                    Rows per page:{" "}
+                    Page size:
                 </label>
 
                 <select
@@ -20,46 +31,68 @@ function Pagination({
                         )
                     }
                 >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
+                    <option value={10}>
+                        10
+                    </option>
+
+                    <option value={20}>
+                        20
+                    </option>
+
+                    <option value={50}>
+                        50
+                    </option>
                 </select>
             </div>
 
-            <div>
+
+            <div className="page-buttons">
+
                 <button
                     disabled={currentPage === 1}
                     onClick={() =>
-                        onPageChange(currentPage - 1)
+                        onPageChange(
+                            currentPage - 1
+                        )
                     }
                 >
                     Previous
                 </button>
 
-                {Array.from(
-                    { length: totalPages },
-                    (_, index) => index + 1
-                ).map((page) => (
+
+                {pages.map((page) => (
                     <button
                         key={page}
+                        className={
+                            page === currentPage
+                                ? "active"
+                                : ""
+                        }
                         onClick={() =>
                             onPageChange(page)
                         }
-                        disabled={page === currentPage}
                     >
                         {page}
                     </button>
                 ))}
 
+
                 <button
-                    disabled={currentPage === totalPages}
+                    disabled={
+                        currentPage ===
+                        totalPages
+                    }
                     onClick={() =>
-                        onPageChange(currentPage + 1)
+                        onPageChange(
+                            currentPage + 1
+                        )
                     }
                 >
                     Next
                 </button>
+
             </div>
+
         </div>
     );
 }
